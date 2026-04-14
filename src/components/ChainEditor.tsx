@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, type MouseEvent as RMouseEvent, type TouchEvent as RTouchEvent } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -42,7 +42,9 @@ function getClientXY(e: MouseEvent | TouchEvent) {
 function Editor({ canvas, onChange }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
   const { screenToFlowPosition } = useReactFlow()
-  const connectingRef = useRef<{ nodeId: string; handleType: 'source' | 'target' } | null>(null)
+  const connectingRef = useRef<
+    { nodeId: string; handleType: 'source' | 'target'; startX: number; startY: number } | null
+  >(null)
   const didConnectRef = useRef(false)
 
   const nodes = canvas.nodes
@@ -89,10 +91,21 @@ function Editor({ canvas, onChange }: Props) {
   )
 
   const onConnectStart = useCallback(
-    (_: unknown, params: { nodeId: string | null; handleType: 'source' | 'target' | null }) => {
+    (
+      event: RMouseEvent | RTouchEvent,
+      params: { nodeId: string | null; handleType: 'source' | 'target' | null },
+    ) => {
       didConnectRef.current = false
       if (params.nodeId && params.handleType) {
-        connectingRef.current = { nodeId: params.nodeId, handleType: params.handleType }
+        const start = 'clientX' in event
+          ? { x: event.clientX, y: event.clientY }
+          : { x: event.touches[0].clientX, y: event.touches[0].clientY }
+        connectingRef.current = {
+          nodeId: params.nodeId,
+          handleType: params.handleType,
+          startX: start.x,
+          startY: start.y,
+        }
       }
     },
     [],
@@ -108,17 +121,19 @@ function Editor({ canvas, onChange }: Props) {
       if (!source) return
 
       const { x: cx, y: cy } = getClientXY(event)
+      const movedPx = Math.hypot(cx - info.startX, cy - info.startY)
+      const isClick = movedPx < 8
+      const NODE_SIZE = 240
+      const GAP = 100
       const dropFlow = screenToFlowPosition({ x: cx, y: cy })
-
-      // If drop is near the source (i.e. a click, not a drag), snap to a clean offset.
-      const nearSource =
-        Math.hypot(dropFlow.x - source.position.x, dropFlow.y - source.position.y) < 120
-      const pos = nearSource
+      const pos = isClick
         ? {
-            x: source.position.x + (info.handleType === 'source' ? 260 : -260),
+            x:
+              source.position.x +
+              (info.handleType === 'source' ? NODE_SIZE + GAP : -(NODE_SIZE + GAP)),
             y: source.position.y,
           }
-        : { x: dropFlow.x - 100, y: dropFlow.y - 100 }
+        : { x: dropFlow.x - NODE_SIZE / 2, y: dropFlow.y - NODE_SIZE / 2 }
 
       const newNode: Node<ValueNodeData> = {
         id: newId(),

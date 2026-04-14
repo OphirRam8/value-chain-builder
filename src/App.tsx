@@ -32,6 +32,7 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(() => loadActiveId())
   const [useApi, setUseApi] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const pendingSaves = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   // Detect server & load from it if available.
@@ -135,7 +136,15 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <button
+        className="sidebar-toggle"
+        aria-label="Toggle canvases"
+        onClick={() => setSidebarOpen((v) => !v)}
+      >
+        ☰
+      </button>
+      <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
       <aside className="sidebar">
         <div className="sidebar-header">
           <h1>Value Chains</h1>
@@ -148,7 +157,10 @@ export default function App() {
             <li
               key={c.id}
               className={c.id === activeId ? 'active' : ''}
-              onClick={() => setActiveId(c.id)}
+              onClick={() => {
+                setActiveId(c.id)
+                setSidebarOpen(false)
+              }}
             >
               <div className="canvas-list-main">
                 <div className="canvas-list-name">{c.name || 'Untitled'}</div>

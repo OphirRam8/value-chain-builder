@@ -14,6 +14,10 @@ export type ValueNodeData = {
   addedValue: string
 }
 
+export type TextNodeData = {
+  text: string
+}
+
 export type ValueEdgeData = {
   supplies: SupplyKind[]
 }
@@ -22,7 +26,7 @@ export type Canvas = {
   id: string
   name: string
   outcome: string
-  nodes: import('reactflow').Node<ValueNodeData>[]
+  nodes: import('reactflow').Node[]
   edges: import('reactflow').Edge<ValueEdgeData>[]
   createdAt: number
   updatedAt: number

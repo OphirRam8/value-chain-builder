@@ -281,6 +281,40 @@ input:focus, textarea:focus {
 }
 .node-delete:hover { color: var(--accent); border-color: var(--accent); }
 
+.text-node {
+  position: relative;
+  background: transparent;
+  padding: 6px 8px;
+  min-width: 160px;
+  min-height: 36px;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  transition: border-color 0.15s;
+}
+.text-node:hover { border-color: var(--border); }
+.text-node:hover .node-delete { opacity: 1; }
+.text-node.selected { border-color: var(--accent); border-style: solid; }
+.text-node-textarea {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  width: 100%;
+  min-width: 160px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  resize: both;
+  overflow: auto;
+  line-height: 1.35;
+}
+.text-node-textarea:focus {
+  outline: none;
+  background: var(--accent-soft);
+  border-radius: 4px;
+}
+.text-node-textarea::placeholder { color: #bbb; font-weight: 400; }
+
 .react-flow__handle {
   width: 8px;
   height: 8px;

@@ -16,11 +16,12 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import ValueNode from './ValueNode'
+import TextNode from './TextNode'
 import type { Canvas, SupplyKind, ValueEdgeData, ValueNodeData } from '../types'
 import { SUPPLY_LABELS } from '../types'
 import { newId } from '../storage'
 
-const nodeTypes = { value: ValueNode }
+const nodeTypes = { value: ValueNode, text: TextNode }
 const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 
 type Props = {
@@ -60,7 +61,7 @@ function Editor({ canvas, onChange }: Props) {
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      onChange({ nodes: applyNodeChanges(changes, nodes) as Node<ValueNodeData>[] })
+      onChange({ nodes: applyNodeChanges(changes, nodes) })
     },
     [nodes, onChange],
   )
@@ -158,6 +159,16 @@ function Editor({ canvas, onChange }: Props) {
     onChange({ nodes: [...nodes, node] })
   }
 
+  const addTextNode = () => {
+    const node: Node = {
+      id: newId(),
+      type: 'text',
+      position: { x: 80, y: 40 },
+      data: { text: '' },
+    }
+    onChange({ nodes: [...nodes, node] })
+  }
+
   const toggleEdgeSupply = (edgeId: string, k: SupplyKind) => {
     onChange({
       edges: canvas.edges.map((e) => {
@@ -194,6 +205,7 @@ function Editor({ canvas, onChange }: Props) {
         <button className="btn-primary" onClick={addNode}>
           + Add Position
         </button>
+        <button onClick={addTextNode}>+ Add Text</button>
       </div>
       <div className="flow-wrap">
         <ReactFlow

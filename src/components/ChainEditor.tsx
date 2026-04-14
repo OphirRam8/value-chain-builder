@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -7,6 +7,7 @@ import ReactFlow, {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  useReactFlow,
   type Connection,
   type Edge,
   type EdgeChange,
@@ -31,8 +32,17 @@ function edgeLabel(supplies: string[] = []) {
   return supplies.length ? supplies.join(' · ') : '+'
 }
 
+function getClientXY(e: MouseEvent | TouchEvent) {
+  if ('clientX' in e) return { x: e.clientX, y: e.clientY }
+  const t = e.changedTouches[0]
+  return { x: t.clientX, y: t.clientY }
+}
+
 function Editor({ canvas, onChange }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
+  const { screenToFlowPosition } = useReactFlow()
+  const connectingRef = useRef<{ nodeId: string; handleType: 'source' | 'target' } | null>(null)
+  const didConnectRef = useRef(false)
 
   const nodes = canvas.nodes
   const edges = useMemo(
@@ -40,7 +50,7 @@ function Editor({ canvas, onChange }: Props) {
       canvas.edges.map((e) => ({
         ...e,
         label: edgeLabel(e.data?.supplies),
-        labelStyle: { fontSize: 11, fontWeight: 600 },
+        labelStyle: { fontSize: 12, fontWeight: 600 },
         labelBgStyle: { fill: '#fff' },
         labelBgPadding: [6, 4] as [number, number],
         labelBgBorderRadius: 6,
@@ -64,6 +74,7 @@ function Editor({ canvas, onChange }: Props) {
 
   const onConnect = useCallback(
     (conn: Connection) => {
+      didConnectRef.current = true
       const edge: Edge<ValueEdgeData> = {
         id: newId(),
         source: conn.source!,
@@ -76,12 +87,72 @@ function Editor({ canvas, onChange }: Props) {
     [canvas.edges, onChange],
   )
 
+  const onConnectStart = useCallback(
+    (_: unknown, params: { nodeId: string | null; handleType: 'source' | 'target' | null }) => {
+      didConnectRef.current = false
+      if (params.nodeId && params.handleType) {
+        connectingRef.current = { nodeId: params.nodeId, handleType: params.handleType }
+      }
+    },
+    [],
+  )
+
+  const onConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const info = connectingRef.current
+      connectingRef.current = null
+      if (!info || didConnectRef.current) return
+
+      const source = nodes.find((n) => n.id === info.nodeId)
+      if (!source) return
+
+      const { x: cx, y: cy } = getClientXY(event)
+      const dropFlow = screenToFlowPosition({ x: cx, y: cy })
+
+      // If drop is near the source (i.e. a click, not a drag), snap to a clean offset.
+      const nearSource =
+        Math.hypot(dropFlow.x - source.position.x, dropFlow.y - source.position.y) < 120
+      const pos = nearSource
+        ? {
+            x: source.position.x + (info.handleType === 'source' ? 260 : -260),
+            y: source.position.y,
+          }
+        : { x: dropFlow.x - 100, y: dropFlow.y - 100 }
+
+      const newNode: Node<ValueNodeData> = {
+        id: newId(),
+        type: 'value',
+        position: pos,
+        data: { role: '', addedValue: '' },
+      }
+      const newEdge: Edge<ValueEdgeData> =
+        info.handleType === 'source'
+          ? {
+              id: newId(),
+              source: info.nodeId,
+              target: newNode.id,
+              data: { supplies: ['I', 'R'] },
+              type: 'default',
+            }
+          : {
+              id: newId(),
+              source: newNode.id,
+              target: info.nodeId,
+              data: { supplies: ['I', 'R'] },
+              type: 'default',
+            }
+
+      onChange({ nodes: [...nodes, newNode], edges: [...canvas.edges, newEdge] })
+    },
+    [nodes, canvas.edges, onChange, screenToFlowPosition],
+  )
+
   const addNode = () => {
     const count = nodes.length
     const node: Node<ValueNodeData> = {
       id: newId(),
       type: 'value',
-      position: { x: 80 + count * 240, y: 160 + (count % 2) * 40 },
+      position: { x: 80 + count * 260, y: 160 + (count % 2) * 40 },
       data: { role: '', addedValue: '' },
     }
     onChange({ nodes: [...nodes, node] })
@@ -132,6 +203,8 @@ function Editor({ canvas, onChange }: Props) {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
           onEdgeClick={(_, e) => setSelectedEdgeId(e.id)}
           onPaneClick={() => setSelectedEdgeId(null)}
           fitView

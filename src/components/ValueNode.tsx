@@ -1,8 +1,13 @@
-import { Handle, Position, type NodeProps, useReactFlow } from 'reactflow'
+import { Handle, Position, type NodeProps, useReactFlow, useStore } from 'reactflow'
 import type { ValueNodeData } from '../types'
 
 export default function ValueNode({ id, data, selected }: NodeProps<ValueNodeData>) {
   const { setNodes, setEdges } = useReactFlow()
+
+  const { hasIncoming, hasOutgoing } = useStore((s) => ({
+    hasIncoming: s.edges.some((e) => e.target === id),
+    hasOutgoing: s.edges.some((e) => e.source === id),
+  }))
 
   const update = (patch: Partial<ValueNodeData>) => {
     setNodes((nds) =>
@@ -17,7 +22,7 @@ export default function ValueNode({ id, data, selected }: NodeProps<ValueNodeDat
 
   return (
     <div className={`value-node ${selected ? 'selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      {!hasIncoming && <Handle type="target" position={Position.Left} className="handle-plus" />}
       <button
         className="node-delete nodrag"
         title="Delete"
@@ -43,7 +48,7 @@ export default function ValueNode({ id, data, selected }: NodeProps<ValueNodeDat
           onChange={(e) => update({ addedValue: e.target.value })}
         />
       </div>
-      <Handle type="source" position={Position.Right} />
+      {!hasOutgoing && <Handle type="source" position={Position.Right} className="handle-plus" />}
     </div>
   )
 }

@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ChainEditor from './components/ChainEditor'
 import type { Canvas } from './types'
 import {
+  apiAvailable,
+  apiDeleteCanvas,
+  apiLoadCanvases,
+  apiSaveCanvas,
   loadActiveId,
-  loadCanvases,
+  loadCanvasesLocal,
   newId,
   saveActiveId,
-  saveCanvases,
+  saveCanvasesLocal,
 } from './storage'
 import './App.css'
 
@@ -24,51 +28,91 @@ function createCanvas(): Canvas {
 }
 
 export default function App() {
-  const [canvases, setCanvases] = useState<Canvas[]>(() => loadCanvases())
+  const [canvases, setCanvases] = useState<Canvas[]>(() => loadCanvasesLocal())
   const [activeId, setActiveId] = useState<string | null>(() => loadActiveId())
+  const [useApi, setUseApi] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const pendingSaves = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
+  // Detect server & load from it if available.
   useEffect(() => {
-    saveCanvases(canvases)
+    ;(async () => {
+      const has = await apiAvailable()
+      setUseApi(has)
+      if (has) {
+        try {
+          const server = await apiLoadCanvases()
+          setCanvases(server)
+        } catch {
+          // keep local
+        }
+      }
+      setLoaded(true)
+    })()
+  }, [])
+
+  // Persist locally always.
+  useEffect(() => {
+    saveCanvasesLocal(canvases)
   }, [canvases])
 
   useEffect(() => {
     saveActiveId(activeId)
   }, [activeId])
 
+  // Ensure we have a canvas.
   useEffect(() => {
+    if (!loaded) return
     if (canvases.length === 0) {
       const c = createCanvas()
       setCanvases([c])
       setActiveId(c.id)
+      if (useApi) apiSaveCanvas(c).catch(() => {})
     } else if (!activeId || !canvases.find((c) => c.id === activeId)) {
       setActiveId(canvases[0].id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loaded])
 
   const active = useMemo(
     () => canvases.find((c) => c.id === activeId) ?? null,
     [canvases, activeId],
   )
 
+  const scheduleServerSave = (c: Canvas) => {
+    if (!useApi) return
+    const prev = pendingSaves.current.get(c.id)
+    if (prev) clearTimeout(prev)
+    const t = setTimeout(() => {
+      apiSaveCanvas(c).catch(() => {})
+      pendingSaves.current.delete(c.id)
+    }, 400)
+    pendingSaves.current.set(c.id, t)
+  }
+
   const updateActive = (patch: Partial<Canvas>) => {
     if (!active) return
-    setCanvases((prev) =>
-      prev.map((c) =>
+    setCanvases((prev) => {
+      const next = prev.map((c) =>
         c.id === active.id ? { ...c, ...patch, updatedAt: Date.now() } : c,
-      ),
-    )
+      )
+      const updated = next.find((c) => c.id === active.id)
+      if (updated) scheduleServerSave(updated)
+      return next
+    })
   }
 
   const addCanvas = () => {
     const c = createCanvas()
     setCanvases((prev) => [c, ...prev])
     setActiveId(c.id)
+    if (useApi) apiSaveCanvas(c).catch(() => {})
   }
 
   const deleteCanvas = (id: string) => {
     if (!confirm('Delete this canvas? This cannot be undone.')) return
     setCanvases((prev) => prev.filter((c) => c.id !== id))
+    if (useApi) apiDeleteCanvas(id).catch(() => {})
     if (activeId === id) {
       const remaining = canvases.filter((c) => c.id !== id)
       setActiveId(remaining[0]?.id ?? null)
@@ -87,6 +131,7 @@ export default function App() {
     }
     setCanvases((prev) => [copy, ...prev])
     setActiveId(copy.id)
+    if (useApi) apiSaveCanvas(copy).catch(() => {})
   }
 
   return (
@@ -132,7 +177,9 @@ export default function App() {
             </li>
           ))}
         </ul>
-        <div className="sidebar-footer">Saved locally in your browser.</div>
+        <div className="sidebar-footer">
+          {useApi ? 'Synced to your Mac.' : 'Saved locally in your browser.'}
+        </div>
       </aside>
       <main className="main">
         {active ? (

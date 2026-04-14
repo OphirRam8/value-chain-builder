@@ -79,7 +79,7 @@ function Editor({ canvas, onChange }: Props) {
         id: newId(),
         source: conn.source!,
         target: conn.target!,
-        data: { supplies: ['I', 'R'] },
+        data: { supplies: [] },
         type: 'default',
       }
       onChange({ edges: addEdge(edge, canvas.edges) as Edge<ValueEdgeData>[] })
@@ -131,14 +131,14 @@ function Editor({ canvas, onChange }: Props) {
               id: newId(),
               source: info.nodeId,
               target: newNode.id,
-              data: { supplies: ['I', 'R'] },
+              data: { supplies: [] },
               type: 'default',
             }
           : {
               id: newId(),
               source: newNode.id,
               target: info.nodeId,
-              data: { supplies: ['I', 'R'] },
+              data: { supplies: [] },
               type: 'default',
             }
 

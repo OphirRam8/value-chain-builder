@@ -3,6 +3,7 @@ import ReactFlow, {
   Background,
   Controls,
   MiniMap,
+  ReactFlowProvider,
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
@@ -14,11 +15,12 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import ValueNode from './ValueNode'
-import Inspector from './Inspector'
-import type { Canvas, ValueEdgeData, ValueNodeData } from '../types'
+import type { Canvas, SupplyKind, ValueEdgeData, ValueNodeData } from '../types'
+import { SUPPLY_LABELS } from '../types'
 import { newId } from '../storage'
 
 const nodeTypes = { value: ValueNode }
+const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 
 type Props = {
   canvas: Canvas
@@ -26,11 +28,10 @@ type Props = {
 }
 
 function edgeLabel(supplies: string[] = []) {
-  return supplies.length ? supplies.join(' · ') : ''
+  return supplies.length ? supplies.join(' · ') : '+'
 }
 
-export default function ChainEditor({ canvas, onChange }: Props) {
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+function Editor({ canvas, onChange }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
 
   const nodes = canvas.nodes
@@ -41,6 +42,8 @@ export default function ChainEditor({ canvas, onChange }: Props) {
         label: edgeLabel(e.data?.supplies),
         labelStyle: { fontSize: 11, fontWeight: 600 },
         labelBgStyle: { fill: '#fff' },
+        labelBgPadding: [6, 4] as [number, number],
+        labelBgBorderRadius: 6,
       })),
     [canvas.edges],
   )
@@ -84,31 +87,22 @@ export default function ChainEditor({ canvas, onChange }: Props) {
     onChange({ nodes: [...nodes, node] })
   }
 
-  const updateNode = (id: string, patch: Partial<ValueNodeData>) => {
+  const toggleEdgeSupply = (edgeId: string, k: SupplyKind) => {
     onChange({
-      nodes: nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)),
+      edges: canvas.edges.map((e) => {
+        if (e.id !== edgeId) return e
+        const supplies = e.data?.supplies ?? []
+        const next = supplies.includes(k) ? supplies.filter((s) => s !== k) : [...supplies, k]
+        return { ...e, data: { ...(e.data ?? { supplies: [] }), supplies: next } }
+      }),
     })
   }
-  const updateEdge = (id: string, patch: Partial<ValueEdgeData>) => {
-    onChange({
-      edges: canvas.edges.map((e) =>
-        e.id === id ? { ...e, data: { ...(e.data ?? { supplies: [] }), ...patch } } : e,
-      ),
-    })
-  }
-  const deleteNode = (id: string) => {
-    onChange({
-      nodes: nodes.filter((n) => n.id !== id),
-      edges: canvas.edges.filter((e) => e.source !== id && e.target !== id),
-    })
-    setSelectedNodeId(null)
-  }
+
   const deleteEdge = (id: string) => {
     onChange({ edges: canvas.edges.filter((e) => e.id !== id) })
     setSelectedEdgeId(null)
   }
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null
   const selectedEdge = canvas.edges.find((e) => e.id === selectedEdgeId) ?? null
 
   return (
@@ -130,44 +124,57 @@ export default function ChainEditor({ canvas, onChange }: Props) {
           + Add Position
         </button>
       </div>
-      <div className="editor-main">
-        <div className="flow-wrap">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={(_, n) => {
-              setSelectedNodeId(n.id)
-              setSelectedEdgeId(null)
-            }}
-            onEdgeClick={(_, e) => {
-              setSelectedEdgeId(e.id)
-              setSelectedNodeId(null)
-            }}
-            onPaneClick={() => {
-              setSelectedNodeId(null)
-              setSelectedEdgeId(null)
-            }}
-            fitView
-            fitViewOptions={{ padding: 0.3 }}
-          >
-            <Background gap={20} color="#eee" />
-            <Controls />
-            <MiniMap pannable zoomable />
-          </ReactFlow>
-        </div>
-        <Inspector
-          selectedNode={selectedNode}
-          selectedEdge={selectedEdge}
-          onUpdateNode={updateNode}
-          onUpdateEdge={updateEdge}
-          onDeleteNode={deleteNode}
-          onDeleteEdge={deleteEdge}
-        />
+      <div className="flow-wrap">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onEdgeClick={(_, e) => setSelectedEdgeId(e.id)}
+          onPaneClick={() => setSelectedEdgeId(null)}
+          fitView
+          fitViewOptions={{ padding: 0.3 }}
+        >
+          <Background gap={20} color="#eee" />
+          <Controls />
+          <MiniMap pannable zoomable />
+        </ReactFlow>
+        {selectedEdge && (
+          <div className="edge-popover">
+            <div className="edge-popover-header">
+              <span>Supplies / Receives</span>
+              <button className="btn-danger" onClick={() => deleteEdge(selectedEdge.id)}>
+                Delete
+              </button>
+            </div>
+            <div className="chips">
+              {KINDS.map((k) => {
+                const active = selectedEdge.data?.supplies?.includes(k) ?? false
+                return (
+                  <button
+                    key={k}
+                    className={`chip ${active ? 'active' : ''}`}
+                    onClick={() => toggleEdgeSupply(selectedEdge.id, k)}
+                    title={SUPPLY_LABELS[k]}
+                  >
+                    <strong>{k}</strong> {SUPPLY_LABELS[k]}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function ChainEditor(props: Props) {
+  return (
+    <ReactFlowProvider>
+      <Editor {...props} />
+    </ReactFlowProvider>
   )
 }

@@ -152,33 +152,37 @@ input:focus, textarea:focus {
 .canvas-name { max-width: 280px; font-weight: 600; }
 .canvas-outcome { flex: 1; }
 
-.editor-main {
+.flow-wrap {
+  position: relative;
+  background: var(--bg);
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 320px;
   min-height: 0;
 }
-.flow-wrap { position: relative; background: var(--bg); }
 
-.inspector {
-  border-left: 1px solid var(--border);
+.edge-popover {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--panel);
-  padding: 16px;
-  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  z-index: 10;
+  max-width: 520px;
 }
-.inspector-empty { color: var(--muted); }
-.inspector-empty .hint { font-size: 12px; }
-.inspector-header {
+.edge-popover-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
+  font-size: 13px;
+  gap: 12px;
 }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field > span { font-size: 12px; color: var(--muted); font-weight: 500; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
@@ -197,18 +201,20 @@ input:focus, textarea:focus {
 .chip strong { margin-right: 4px; }
 
 .value-node {
-  width: 180px;
-  height: 180px;
+  position: relative;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background: #fff;
   border: 2px solid #2b2b2b;
-  padding: 18px;
+  padding: 28px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   transition: box-shadow 0.15s, border-color 0.15s;
 }
+.value-node:hover .node-delete { opacity: 1; }
 .value-node.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
@@ -216,30 +222,64 @@ input:focus, textarea:focus {
 .value-node-inner {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  width: 100%;
   overflow: hidden;
 }
-.value-node-role {
+.value-node input.value-node-role,
+.value-node textarea.value-node-added-text {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  width: 100%;
+  text-align: center;
+  font-family: inherit;
+  color: var(--text);
+  border-radius: 4px;
+}
+.value-node input.value-node-role {
   font-weight: 700;
   font-size: 13px;
   line-height: 1.2;
 }
-.value-node-added-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  margin-bottom: 2px;
-}
-.value-node-added-text {
+.value-node textarea.value-node-added-text {
   font-size: 11px;
   line-height: 1.3;
-  white-space: pre-wrap;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
+  resize: none;
 }
+.value-node input.value-node-role:hover,
+.value-node textarea.value-node-added-text:hover {
+  background: #f5f5f5;
+}
+.value-node input.value-node-role:focus,
+.value-node textarea.value-node-added-text:focus {
+  outline: none;
+  background: var(--accent-soft);
+  box-shadow: none;
+}
+.value-node input.value-node-role::placeholder,
+.value-node textarea.value-node-added-text::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+.node-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  z-index: 2;
+}
+.node-delete:hover { color: var(--accent); border-color: var(--accent); }
 
 .react-flow__handle {
   width: 10px;

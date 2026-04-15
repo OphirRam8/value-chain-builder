@@ -56,10 +56,12 @@ export default function ValueEdge({
           }}
         >
           <input
-            className="edge-text nodrag nopan"
+            className={`edge-text nodrag nopan ${text ? '' : 'empty'}`}
             value={text}
             placeholder="Add text…"
             onChange={(e) => setText(e.target.value)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           />
           {supplies.length > 0 && (
             <div className="edge-supplies">{supplies.join(' · ')}</div>

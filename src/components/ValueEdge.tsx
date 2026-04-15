@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -21,6 +22,14 @@ export default function ValueEdge({
   style,
 }: EdgeProps<ValueEdgeData>) {
   const { setEdges } = useReactFlow()
+  const textRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const el = textRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [data?.text])
   const [path, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -55,10 +64,12 @@ export default function ValueEdge({
             pointerEvents: 'all',
           }}
         >
-          <input
+          <textarea
+            ref={textRef}
             className={`edge-text nodrag nopan ${text ? '' : 'empty'}`}
             value={text}
             placeholder="Add text…"
+            rows={1}
             onChange={(e) => setText(e.target.value)}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}

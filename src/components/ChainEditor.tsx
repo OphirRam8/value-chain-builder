@@ -17,12 +17,13 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import ValueNode from './ValueNode'
 import TextNode from './TextNode'
+import RingNode from './RingNode'
 import ValueEdge from './ValueEdge'
 import type { Canvas, SupplyKind, ValueEdgeData, ValueNodeData } from '../types'
 import { SUPPLY_LABELS } from '../types'
 import { newId } from '../storage'
 
-const nodeTypes = { value: ValueNode, text: TextNode }
+const nodeTypes = { value: ValueNode, text: TextNode, ring: RingNode }
 const edgeTypes = { valueEdge: ValueEdge }
 const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 
@@ -176,51 +177,15 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
     onChange({ nodes: [...nodes, node] })
   }
 
-  const makeFlywheel = () => {
-    const NODE_SIZE = 240
-    const valueNodes = nodes.filter((n) => n.type === 'value')
-    let ring: Node<ValueNodeData>[]
-    if (valueNodes.length < 3) {
-      ring = Array.from({ length: 4 }, () => ({
-        id: newId(),
-        type: 'value' as const,
-        position: { x: 0, y: 0 },
-        data: { role: '', addedValue: '' },
-      }))
-    } else {
-      ring = valueNodes as Node<ValueNodeData>[]
-    }
-    const count = ring.length
-    const radius = Math.max(260, count * 70)
-    const cx = 400
-    const cy = 400
-    const positioned = ring.map((n, i) => {
-      const angle = (-Math.PI / 2) + (i * 2 * Math.PI) / count
-      return {
-        ...n,
-        position: {
-          x: cx + radius * Math.cos(angle) - NODE_SIZE / 2,
-          y: cy + radius * Math.sin(angle) - NODE_SIZE / 2,
-        },
-      }
-    })
-
-    const otherNodes = nodes.filter((n) => n.type !== 'value')
-    const otherEdges = canvas.edges.filter(
-      (e) => !ring.some((n) => n.id === e.source) && !ring.some((n) => n.id === e.target),
-    )
-    const loopEdges: Edge<ValueEdgeData>[] = positioned.map((n, i) => ({
+  const addRingNode = () => {
+    const node: Node = {
       id: newId(),
-      source: n.id,
-      target: positioned[(i + 1) % count].id,
-      data: { supplies: [], text: '' },
-      type: 'valueEdge',
-    }))
-
-    onChange({
-      nodes: [...otherNodes, ...positioned],
-      edges: [...otherEdges, ...loopEdges],
-    })
+      type: 'ring',
+      position: { x: 200, y: 120 },
+      style: { width: 360, height: 360 },
+      data: { text: '' },
+    }
+    onChange({ nodes: [...nodes, node] })
   }
 
   const toggleEdgeSupply = (edgeId: string, k: SupplyKind) => {
@@ -260,7 +225,7 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
           + Add Position
         </button>
         <button onClick={addTextNode}>+ Add Text</button>
-        <button onClick={makeFlywheel} title="Arrange as flywheel">🌀 Flywheel</button>
+        <button onClick={addRingNode} title="Add a dotted circle for grouping (e.g. a flywheel)">+ Add Ring</button>
         {onToggleFocus && (
           <button onClick={onToggleFocus} title="Focus mode">⛶</button>
         )}

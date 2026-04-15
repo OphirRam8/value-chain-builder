@@ -18,12 +18,13 @@ import 'reactflow/dist/style.css'
 import ValueNode from './ValueNode'
 import TextNode from './TextNode'
 import RingNode from './RingNode'
+import ArrowNode from './ArrowNode'
 import ValueEdge from './ValueEdge'
 import type { Canvas, SupplyKind, ValueEdgeData, ValueNodeData } from '../types'
 import { SUPPLY_LABELS } from '../types'
 import { newId } from '../storage'
 
-const nodeTypes = { value: ValueNode, text: TextNode, ring: RingNode }
+const nodeTypes = { value: ValueNode, text: TextNode, ring: RingNode, arrow: ArrowNode }
 const edgeTypes = { valueEdge: ValueEdge }
 const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 
@@ -42,6 +43,8 @@ function getClientXY(e: MouseEvent | TouchEvent) {
 
 function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
+  const [arrowMode, setArrowMode] = useState(false)
+  const [arrowStart, setArrowStart] = useState<{ x: number; y: number } | null>(null)
   const { screenToFlowPosition } = useReactFlow()
   const connectingRef = useRef<
     { nodeId: string; handleType: 'source' | 'target'; startX: number; startY: number } | null
@@ -177,6 +180,44 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
     onChange({ nodes: [...nodes, node] })
   }
 
+  const handlePaneClick = (event: React.MouseEvent) => {
+    setSelectedEdgeId(null)
+    if (!arrowMode) return
+    const pt = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    if (!arrowStart) {
+      setArrowStart(pt)
+      return
+    }
+    const sx = arrowStart.x
+    const sy = arrowStart.y
+    const ex = pt.x
+    const ey = pt.y
+    const minX = Math.min(sx, ex)
+    const minY = Math.min(sy, ey)
+    const width = Math.max(Math.abs(ex - sx), 4)
+    const height = Math.max(Math.abs(ey - sy), 4)
+    const arrow: Node = {
+      id: newId(),
+      type: 'arrow',
+      position: { x: minX, y: minY },
+      data: {
+        width,
+        height,
+        fromX: sx - minX,
+        fromY: sy - minY,
+        toX: ex - minX,
+        toY: ey - minY,
+      },
+    }
+    onChange({ nodes: [...nodes, arrow] })
+    setArrowStart(null)
+  }
+
+  const toggleArrowMode = () => {
+    setArrowMode((v) => !v)
+    setArrowStart(null)
+  }
+
   const addRingNode = () => {
     const node: Node = {
       id: newId(),
@@ -226,11 +267,18 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
         </button>
         <button onClick={addTextNode}>+ Add Text</button>
         <button onClick={addRingNode} title="Add a dotted circle for grouping (e.g. a flywheel)">+ Add Ring</button>
+        <button
+          className={arrowMode ? 'btn-toggle-on' : ''}
+          onClick={toggleArrowMode}
+          title="Click two points on the canvas to draw an arrow. Toggle off when done."
+        >
+          {arrowMode ? (arrowStart ? '➤ Click end point…' : '➤ Click start point…') : '➤ Add Arrow'}
+        </button>
         {onToggleFocus && (
           <button onClick={onToggleFocus} title="Focus mode">⛶</button>
         )}
       </div>
-      <div className="flow-wrap">
+      <div className={`flow-wrap ${arrowMode ? 'arrow-mode' : ''}`}>
         {focusMode && (canvas.name || canvas.outcome) && (
           <div className="focus-title">
             {canvas.name && <div className="focus-title-name">{canvas.name}</div>}
@@ -248,7 +296,7 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onEdgeClick={(_, e) => setSelectedEdgeId(e.id)}
-          onPaneClick={() => setSelectedEdgeId(null)}
+          onPaneClick={handlePaneClick}
           fitView
           fitViewOptions={{ padding: 0.3 }}
         >

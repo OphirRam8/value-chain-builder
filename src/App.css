@@ -377,6 +377,27 @@ input:focus, textarea:focus {
 }
 .ring-text::placeholder { color: #bbb; font-weight: 400; }
 
+.arrow-node {
+  position: relative;
+  pointer-events: auto;
+}
+.arrow-node:hover .arrow-delete { opacity: 1; }
+.arrow-delete {
+  position: absolute;
+  opacity: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.btn-toggle-on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-toggle-on:hover { background: #d24a2b; }
+
+.arrow-mode .react-flow__pane { cursor: crosshair !important; }
+
 .react-flow__handle {
   width: 8px;
   height: 8px;

@@ -20,6 +20,7 @@ export type TextNodeData = {
 
 export type ValueEdgeData = {
   supplies: SupplyKind[]
+  text?: string
 }
 
 export type Canvas = {

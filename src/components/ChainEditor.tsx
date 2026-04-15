@@ -17,20 +17,18 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import ValueNode from './ValueNode'
 import TextNode from './TextNode'
+import ValueEdge from './ValueEdge'
 import type { Canvas, SupplyKind, ValueEdgeData, ValueNodeData } from '../types'
 import { SUPPLY_LABELS } from '../types'
 import { newId } from '../storage'
 
 const nodeTypes = { value: ValueNode, text: TextNode }
+const edgeTypes = { valueEdge: ValueEdge }
 const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 
 type Props = {
   canvas: Canvas
   onChange: (patch: Partial<Canvas>) => void
-}
-
-function edgeLabel(supplies: string[] = []) {
-  return supplies.length ? supplies.join(' · ') : '+'
 }
 
 function getClientXY(e: MouseEvent | TouchEvent) {
@@ -49,15 +47,7 @@ function Editor({ canvas, onChange }: Props) {
 
   const nodes = canvas.nodes
   const edges = useMemo(
-    () =>
-      canvas.edges.map((e) => ({
-        ...e,
-        label: edgeLabel(e.data?.supplies),
-        labelStyle: { fontSize: 12, fontWeight: 600 },
-        labelBgStyle: { fill: '#fff' },
-        labelBgPadding: [6, 4] as [number, number],
-        labelBgBorderRadius: 6,
-      })),
+    () => canvas.edges.map((e) => ({ ...e, type: 'valueEdge' as const })),
     [canvas.edges],
   )
 
@@ -82,8 +72,8 @@ function Editor({ canvas, onChange }: Props) {
         id: newId(),
         source: conn.source!,
         target: conn.target!,
-        data: { supplies: [] },
-        type: 'default',
+        data: { supplies: [], text: '' },
+        type: 'valueEdge',
       }
       onChange({ edges: addEdge(edge, canvas.edges) as Edge<ValueEdgeData>[] })
     },
@@ -227,6 +217,7 @@ function Editor({ canvas, onChange }: Props) {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}

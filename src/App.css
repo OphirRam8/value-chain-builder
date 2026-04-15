@@ -340,17 +340,20 @@ input:focus, textarea:focus {
   border: 2px dashed #8aa0b8;
   border-radius: 50%;
   background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: border-color 0.15s;
 }
 .ring-node:hover { border-color: var(--accent); }
 .ring-node.selected { border-color: var(--accent); }
 .ring-node:hover .node-delete { opacity: 1; }
 .ring-text-wrap {
-  max-width: 60%;
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 70%;
   text-align: center;
+  background: #fafafa;
+  padding: 0 10px;
   pointer-events: auto;
 }
 .ring-text {

@@ -406,6 +406,38 @@ input:focus, textarea:focus {
 }
 .edge-supplies.edge-plus { color: var(--muted); font-weight: 400; }
 
+/* Focus mode */
+.app.focus-mode {
+  grid-template-columns: 1fr;
+}
+.app.focus-mode .sidebar,
+.app.focus-mode .sidebar-toggle,
+.app.focus-mode .sidebar-backdrop,
+.app.focus-mode .editor-topbar,
+.app.focus-mode .react-flow__minimap,
+.app.focus-mode .react-flow__controls {
+  display: none !important;
+}
+.focus-exit {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.focus-exit:hover { color: var(--accent); border-color: var(--accent); }
+
 /* Mobile */
 @media (max-width: 760px) {
   .app {

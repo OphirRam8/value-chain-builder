@@ -33,6 +33,18 @@ export default function App() {
   const [useApi, setUseApi] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+
+  const toggleFocus = () => {
+    const next = !focusMode
+    setFocusMode(next)
+    if (next) {
+      setSidebarOpen(false)
+      document.documentElement.requestFullscreen?.().catch(() => {})
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }
   const pendingSaves = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   // Detect server & load from it if available.
@@ -136,7 +148,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''} ${focusMode ? 'focus-mode' : ''}`}>
       <button
         className="sidebar-toggle"
         aria-label="Toggle canvases"
@@ -195,11 +207,22 @@ export default function App() {
       </aside>
       <main className="main">
         {active ? (
-          <ChainEditor key={active.id} canvas={active} onChange={updateActive} />
+          <ChainEditor
+            key={active.id}
+            canvas={active}
+            onChange={updateActive}
+            focusMode={focusMode}
+            onToggleFocus={toggleFocus}
+          />
         ) : (
           <div className="empty">Create a canvas to get started.</div>
         )}
       </main>
+      {focusMode && (
+        <button className="focus-exit" onClick={toggleFocus} title="Exit focus mode">
+          ✕
+        </button>
+      )}
     </div>
   )
 }

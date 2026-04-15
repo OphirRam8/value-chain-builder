@@ -29,6 +29,8 @@ const KINDS: SupplyKind[] = ['I', 'R', 'E', 'N', 'M', 'D']
 type Props = {
   canvas: Canvas
   onChange: (patch: Partial<Canvas>) => void
+  focusMode?: boolean
+  onToggleFocus?: () => void
 }
 
 function getClientXY(e: MouseEvent | TouchEvent) {
@@ -37,7 +39,7 @@ function getClientXY(e: MouseEvent | TouchEvent) {
   return { x: t.clientX, y: t.clientY }
 }
 
-function Editor({ canvas, onChange }: Props) {
+function Editor({ canvas, onChange, onToggleFocus }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
   const { screenToFlowPosition } = useReactFlow()
   const connectingRef = useRef<
@@ -211,6 +213,9 @@ function Editor({ canvas, onChange }: Props) {
           + Add Position
         </button>
         <button onClick={addTextNode}>+ Add Text</button>
+        {onToggleFocus && (
+          <button onClick={onToggleFocus} title="Focus mode">⛶</button>
+        )}
       </div>
       <div className="flow-wrap">
         <ReactFlow

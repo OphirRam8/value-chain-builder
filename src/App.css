@@ -397,6 +397,11 @@ input:focus, textarea:focus {
 .btn-toggle-on:hover { background: #d24a2b; }
 
 .arrow-mode .react-flow__pane { cursor: crosshair !important; }
+.arrow-mode .react-flow__node,
+.arrow-mode .react-flow__edge {
+  pointer-events: none !important;
+}
+.arrow-mode * { cursor: crosshair !important; }
 
 .react-flow__handle {
   width: 8px;

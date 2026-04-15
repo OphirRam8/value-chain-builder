@@ -275,7 +275,12 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
           + Add Position
         </button>
         <button onClick={addTextNode}>+ Add Text</button>
-        <button onClick={addRingNode} title="Add a dotted circle for grouping (e.g. a flywheel)">+ Add Ring</button>
+        {typeof window !== 'undefined' &&
+          !window.location.hostname.endsWith('github.io') && (
+            <button onClick={addRingNode} title="Add a dotted circle for grouping (e.g. a flywheel)">
+              + Add Ring
+            </button>
+          )}
         <button
           className={arrowMode ? 'btn-toggle-on' : ''}
           onClick={toggleArrowMode}

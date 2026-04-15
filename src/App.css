@@ -438,6 +438,35 @@ input:focus, textarea:focus {
 .app.focus-mode .react-flow__controls {
   display: none !important;
 }
+.focus-title {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  text-align: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  pointer-events: none;
+  max-width: 70vw;
+}
+.focus-title-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.focus-title-outcome {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .focus-exit {
   position: fixed;
   top: 14px;

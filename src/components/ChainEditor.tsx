@@ -39,7 +39,7 @@ function getClientXY(e: MouseEvent | TouchEvent) {
   return { x: t.clientX, y: t.clientY }
 }
 
-function Editor({ canvas, onChange, onToggleFocus }: Props) {
+function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
   const { screenToFlowPosition } = useReactFlow()
   const connectingRef = useRef<
@@ -218,6 +218,12 @@ function Editor({ canvas, onChange, onToggleFocus }: Props) {
         )}
       </div>
       <div className="flow-wrap">
+        {focusMode && (canvas.name || canvas.outcome) && (
+          <div className="focus-title">
+            {canvas.name && <div className="focus-title-name">{canvas.name}</div>}
+            {canvas.outcome && <div className="focus-title-outcome">{canvas.outcome}</div>}
+          </div>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}

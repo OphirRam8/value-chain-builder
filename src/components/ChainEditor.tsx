@@ -299,6 +299,8 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
           onPaneClick={handlePaneClick}
           fitView
           fitViewOptions={{ padding: 0.3 }}
+          minZoom={0.1}
+          maxZoom={4}
         >
           <Background gap={20} color="#eee" />
           <Controls />

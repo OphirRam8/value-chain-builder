@@ -176,6 +176,53 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
     onChange({ nodes: [...nodes, node] })
   }
 
+  const makeFlywheel = () => {
+    const NODE_SIZE = 240
+    const valueNodes = nodes.filter((n) => n.type === 'value')
+    let ring: Node<ValueNodeData>[]
+    if (valueNodes.length < 3) {
+      ring = Array.from({ length: 4 }, () => ({
+        id: newId(),
+        type: 'value' as const,
+        position: { x: 0, y: 0 },
+        data: { role: '', addedValue: '' },
+      }))
+    } else {
+      ring = valueNodes as Node<ValueNodeData>[]
+    }
+    const count = ring.length
+    const radius = Math.max(260, count * 70)
+    const cx = 400
+    const cy = 400
+    const positioned = ring.map((n, i) => {
+      const angle = (-Math.PI / 2) + (i * 2 * Math.PI) / count
+      return {
+        ...n,
+        position: {
+          x: cx + radius * Math.cos(angle) - NODE_SIZE / 2,
+          y: cy + radius * Math.sin(angle) - NODE_SIZE / 2,
+        },
+      }
+    })
+
+    const otherNodes = nodes.filter((n) => n.type !== 'value')
+    const otherEdges = canvas.edges.filter(
+      (e) => !ring.some((n) => n.id === e.source) && !ring.some((n) => n.id === e.target),
+    )
+    const loopEdges: Edge<ValueEdgeData>[] = positioned.map((n, i) => ({
+      id: newId(),
+      source: n.id,
+      target: positioned[(i + 1) % count].id,
+      data: { supplies: [], text: '' },
+      type: 'valueEdge',
+    }))
+
+    onChange({
+      nodes: [...otherNodes, ...positioned],
+      edges: [...otherEdges, ...loopEdges],
+    })
+  }
+
   const toggleEdgeSupply = (edgeId: string, k: SupplyKind) => {
     onChange({
       edges: canvas.edges.map((e) => {
@@ -213,6 +260,7 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
           + Add Position
         </button>
         <button onClick={addTextNode}>+ Add Text</button>
+        <button onClick={makeFlywheel} title="Arrange as flywheel">🌀 Flywheel</button>
         {onToggleFocus && (
           <button onClick={onToggleFocus} title="Focus mode">⛶</button>
         )}

@@ -160,11 +160,20 @@ function Editor({ canvas, onChange, onToggleFocus, focusMode }: Props) {
   )
 
   const addNode = () => {
-    const count = nodes.length
+    const NODE_SIZE = 240
+    const pane = document.querySelector<HTMLElement>('.react-flow')
+    const rect = pane?.getBoundingClientRect()
+    const centerScreen = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const centerFlow = screenToFlowPosition(centerScreen)
     const node: Node<ValueNodeData> = {
       id: newId(),
       type: 'value',
-      position: { x: 80 + count * 260, y: 160 + (count % 2) * 40 },
+      position: {
+        x: centerFlow.x - NODE_SIZE / 2,
+        y: centerFlow.y - NODE_SIZE / 2,
+      },
       data: { role: '', addedValue: '' },
     }
     onChange({ nodes: [...nodes, node] })
